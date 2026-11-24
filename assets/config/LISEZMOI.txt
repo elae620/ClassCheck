@@ -1,0 +1,1 @@
+Placez ici supabase.json (copie de dart_defines.json) : il est ignoré par git.

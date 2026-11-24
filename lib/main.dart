@@ -18,6 +18,7 @@ Future<void> main() async {
   await initializeDateFormatting('fr_FR');
   Intl.defaultLocale = 'fr_FR';
 
+  await Env.charger();
   if (!Env.estConfigure) {
     runApp(const _ConfigurationManquanteApp());
     return;
@@ -62,8 +63,8 @@ class _ConfigurationManquanteApp extends StatelessWidget {
             padding: EdgeInsets.all(24),
             child: Text(
               'Configuration Supabase manquante.\n\n'
-              'Lancez l\'application avec :\n'
-              'flutter run --dart-define-from-file=dart_defines.json',
+              'Copiez dart_defines.json dans assets/config/supabase.json\n'
+              'ou lancez : flutter run --dart-define-from-file=dart_defines.json',
               textAlign: TextAlign.center,
             ),
           ),

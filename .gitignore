@@ -1,5 +1,6 @@
 # --- Secrets (ne jamais commiter) ---
 dart_defines.json
+assets/config/supabase.json
 .env
 *.env
 

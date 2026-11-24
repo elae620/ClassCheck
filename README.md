@@ -67,6 +67,14 @@ copy dart_defines.example.json dart_defines.json   # puis renseigner l'URL et la
 { "SUPABASE_URL": "https://xxxx.supabase.co", "SUPABASE_ANON_KEY": "sb_publishable_..." }
 ```
 
+**Lancement sans paramètre** (bouton Run par défaut d'Android Studio, `flutter run` seul) :
+copiez aussi ce fichier dans `assets/config/supabase.json` (ignoré par git). L'application le lit
+au démarrage quand `--dart-define` n'est pas fourni.
+
+```bash
+copy dart_defines.json assets\config\supabase.json
+```
+
 ## 4. Installation et lancement
 
 Le dépôt contient le code Dart, le manifeste Android et les tests. Les dossiers natifs générés

@@ -44,3 +44,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/models/
+    # Configuration locale facultative (supabase.json ignoré par git, voir README)
+    - assets/config/
