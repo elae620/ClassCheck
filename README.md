@@ -100,6 +100,11 @@ flutter test
 flutter run --dart-define-from-file=dart_defines.json
 ```
 
+**Vitesse.** La première compilation prend 2 à 3 minutes (téléchargement des dépendances
+Gradle) ; les suivantes environ 15 s grâce au cache Gradle. En mode debug, l'application est
+nettement plus lente (caméra, IA) : pour tester le pointage en conditions réelles, utilisez la
+configuration **« ClassCheck (rapide, release) »** (`flutter run --release`, sans rechargement à chaud).
+
 Dans Android Studio, la configuration d'exécution **« ClassCheck (main) »** (dossier `.run/`)
 ajoute déjà `--dart-define-from-file=dart_defines.json`.
 

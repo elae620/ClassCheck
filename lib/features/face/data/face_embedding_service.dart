@@ -92,28 +92,22 @@ class TfliteFaceEmbeddingService implements FaceEmbeddingService {
   Future<List<double>> calculer(String cheminImage, Face visage, {bool frontal = true}) async {
     _verifierPose(visage, frontal: frontal);
 
-    final octets = await File(cheminImage).readAsBytes();
-    final decode = img.decodeImage(octets);
-    if (decode == null) throw StateError('Image illisible');
-    // Même orientation que celle utilisée par ML Kit (EXIF appliqué).
-    final image = img.bakeOrientation(decode);
-
     final gauche = visage.landmarks[FaceLandmarkType.leftEye]?.position;
     final droit = visage.landmarks[FaceLandmarkType.rightEye]?.position;
     final cadre = visage.boundingBox;
-    final VisageAligne aligne = (gauche != null && droit != null)
-        ? FaceAligner.aligner(
-            image,
-            math.Point(gauche.x.toDouble(), gauche.y.toDouble()),
-            math.Point(droit.x.toDouble(), droit.y.toDouble()),
-            taille: _taille,
-          )
-        : FaceAligner.recadrer(image,
-            gauche: cadre.left,
-            haut: cadre.top,
-            largeur: cadre.width,
-            hauteur: cadre.height,
-            taille: _taille);
+    // Décodage JPEG + alignement dans un isolate : c'est l'étape la plus lourde
+    // (Dart pur) et elle figeait l'écran, surtout en mode debug.
+    final aligne = await compute(
+      preparerVisage,
+      RequeteVisage(
+        chemin: cheminImage,
+        taille: _taille,
+        yeux: (gauche != null && droit != null)
+            ? [gauche.x.toDouble(), gauche.y.toDouble(), droit.x.toDouble(), droit.y.toDouble()]
+            : null,
+        cadre: [cadre.left, cadre.top, cadre.width, cadre.height],
+      ),
+    );
 
     final qualite = FaceQuality.verifierImage(aligne.gris, aligne.taille, aligne.taille);
     if (qualite != null) throw QualiteVisageException(qualite);
@@ -135,6 +129,33 @@ class TfliteFaceEmbeddingService implements FaceEmbeddingService {
 
   @override
   Future<void> fermer() async => _interpreteur.close();
+}
+
+/// Paramètres envoyés à l'isolate de préparation (types simples uniquement).
+class RequeteVisage {
+  const RequeteVisage({required this.chemin, required this.taille, required this.cadre, this.yeux});
+  final String chemin;
+  final int taille;
+
+  /// [xGauche, yGauche, xDroit, yDroit] ou null si ML Kit n'a pas trouvé les yeux.
+  final List<double>? yeux;
+
+  /// [gauche, haut, largeur, hauteur] du visage.
+  final List<double> cadre;
+}
+
+/// Exécutée dans un isolate : lit la photo, applique l'orientation EXIF
+/// (comme ML Kit) et renvoie le visage aligné 112×112.
+VisageAligne preparerVisage(RequeteVisage r) {
+  final decode = img.decodeImage(File(r.chemin).readAsBytesSync());
+  if (decode == null) throw StateError('Image illisible');
+  final image = img.bakeOrientation(decode);
+  final y = r.yeux;
+  if (y != null) {
+    return FaceAligner.aligner(image, math.Point(y[0], y[1]), math.Point(y[2], y[3]), taille: r.taille);
+  }
+  return FaceAligner.recadrer(image,
+      gauche: r.cadre[0], haut: r.cadre[1], largeur: r.cadre[2], hauteur: r.cadre[3], taille: r.taille);
 }
 
 /// Implémentation FACTICE (développement uniquement) : vecteur construit à

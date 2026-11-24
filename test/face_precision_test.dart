@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
+import 'package:classcheck/features/face/data/face_embedding_service.dart';
 import 'package:classcheck/features/face/domain/face_alignment.dart';
 import 'package:classcheck/features/face/domain/face_math.dart';
 import 'package:classcheck/features/face/domain/face_quality.dart';
@@ -77,6 +81,25 @@ void main() {
       final i = (50 * 112 + 10) * 3;
       final j = (50 * 112 + 101) * 3;
       expect(v.rgbMiroir[j], v.rgb[i]);
+    });
+
+    test('préparation dans un isolate depuis une vraie photo JPEG', () async {
+      const a = math.Point(500.0, 600.0), b = math.Point(700.0, 610.0);
+      final dossier = await Directory.systemTemp.createTemp('classcheck');
+      final f = File('${dossier.path}/selfie.jpg')
+        ..writeAsBytesSync(img.encodeJpg(imageAvecYeux(a, b, w: 1200, h: 1600)));
+      final chrono = Stopwatch()..start();
+      final v = await compute(
+        preparerVisage,
+        RequeteVisage(chemin: f.path, taille: 112, yeux: [a.x, a.y, b.x, b.y], cadre: const [0, 0, 1, 1]),
+      );
+      chrono.stop();
+      final (g, d) = yeuxDansAligne(v);
+      expect((g.y - d.y).abs(), lessThan(2.5));
+      expect(v.rgb.length, 112 * 112 * 3);
+      // ignore: avoid_print
+      print('Préparation photo 1200×1600 : ${chrono.elapsedMilliseconds} ms');
+      await dossier.delete(recursive: true);
     });
 
     test('yeux confondus refusés', () {
